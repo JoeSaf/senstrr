@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Senstr - Your Video Library</title>
+<link rel="stylesheet" href="/static/style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+
+<nav class="glass-nav">
+  <div class="nav-container">
+    <a href="/" class="nav-logo">
+      <span>🎬</span> Senstr
+    </a>
+    <div class="nav-links">
+      <a href="/" class="nav-item active">Home</a>
+      <a href="/upload" class="nav-item">Upload</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+<h2>📁 {{ current_path }}</h2>
+
+<div class="grid">
+
+{% for f in files %}
+
+<div class="card">
+
+{% if f.is_dir %}
+
+<a href="/browse/{{ current_path }}/{{ f.name }}">
+📁 {{ f.name }}
+</a>
+
+{% else %}
+
+<a href="/watch/{{ current_path }}/{{ f.name }}">
+🎬 {{ f.name }}
+</a>
+
+{% endif %}
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+</body>
+</html>

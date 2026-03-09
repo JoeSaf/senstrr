@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Upload - Senstr</title>
+<link rel="stylesheet" href="/static/style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+.upload-container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 30px;
+    padding: 40px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    letter-spacing: 0.3px;
+}
+
+.file-drop-area {
+    border: 2px dashed rgba(0, 113, 227, 0.3);
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.file-drop-area:hover {
+    border-color: var(--primary-color);
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.file-drop-area input[type="file"] {
+    display: none;
+}
+
+.file-drop-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-secondary);
+}
+
+.file-drop-label span {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.upload-btn {
+    background: linear-gradient(135deg, var(--primary-color), #00a0e9);
+    color: white;
+    border: none;
+    padding: 14px 30px;
+    border-radius: 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.upload-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 113, 227, 0.3);
+}
+
+.folder-creation {
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, var(--primary-color), #00a0e9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+</style>
+</head>
+
+<body>
+
+<nav class="glass-nav">
+  <div class="nav-container">
+    <a href="/" class="nav-logo">
+      <span>🎬</span> Senstr
+    </a>
+    <div class="nav-links">
+      <a href="/" class="nav-item">Home</a>
+      <a href="/upload" class="nav-item active">Upload</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+<div class="upload-container">
+
+<h2 class="section-title">Upload Videos</h2>
+
+<form id="uploadForm">
+<div class="form-group">
+<label>Destination Folder</label>
+<select name="folder" id="folderSelect">
+<option value="">/ (root)</option>
+{% for f in folders %}
+<option value="{{f}}">{{f}}</option>
+{% endfor %}
+</select>
+</div>
+
+<div class="form-group">
+<label>Select Videos</label>
+<div class="file-drop-area" id="dropArea">
+<input type="file" id="filesInput" name="file" multiple>
+<div class="file-drop-label">
+<span>📁</span>
+<span>Drag & drop files here or click to browse</span>
+<small style="color: var(--text-secondary);">Supports: MP4, MOV, AVI, MKV</small>
+</div>
+</div>
+</div>
+
+<button type="submit" class="upload-btn">Upload Videos</button>
+</form>
+
+<div id="progressContainer" class="progress-container"></div>
+
+<div class="folder-creation">
+<h2 class="section-title">Create New Folder</h2>
+
+<form method="POST" action="/create_folder">
+<div class="form-group">
+<label>Parent Folder</label>
+<select name="parent">
+<option value="">/ (root)</option>
+{% for f in folders %}
+<option value="{{f}}">{{f}}</option>
+{% endfor %}
+</select>
+</div>
+
+<div class="form-group">
+<label>Folder Name</label>
+<input name="name" placeholder="e.g., Season 1, Movies, etc.">
+</div>
+
+<button class="upload-btn" style="background: rgba(255,255,255,0.9); color: var(--text-primary);">Create Folder</button>
+</form>
+</div>
+
+</div>
+
+</div>
+
+<script>
+const form = document.getElementById("uploadForm");
+const filesInput = document.getElementById("filesInput");
+const folderSelect = document.getElementById("folderSelect");
+const progressContainer = document.getElementById("progressContainer");
+const dropArea = document.getElementById("dropArea");
+
+// Drag and drop functionality
+dropArea.addEventListener("click", () => filesInput.click());
+
+dropArea.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropArea.style.borderColor = "var(--primary-color)";
+    dropArea.style.background = "rgba(255, 255, 255, 0.8)";
+});
+
+dropArea.addEventListener("dragleave", (e) => {
+    e.preventDefault();
+    dropArea.style.borderColor = "rgba(0, 113, 227, 0.3)";
+    dropArea.style.background = "rgba(255, 255, 255, 0.5)";
+});
+
+dropArea.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropArea.style.borderColor = "rgba(0, 113, 227, 0.3)";
+    dropArea.style.background = "rgba(255, 255, 255, 0.5)";
+    filesInput.files = e.dataTransfer.files;
+});
+
+form.addEventListener("submit", function(e){
+    e.preventDefault();
+
+    const files = filesInput.files;
+    const folder = folderSelect.value;
+
+    progressContainer.innerHTML = "";
+
+    for(let i=0;i<files.length;i++){
+        const file = files[i];
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "progress-wrapper";
+
+        const bar = document.createElement("div");
+        bar.className = "progress-bar";
+        wrapper.appendChild(bar);
+
+        const label = document.createElement("div");
+        label.textContent = file.name;
+        label.style.marginBottom = "8px";
+        label.style.fontWeight = "500";
+
+        progressContainer.appendChild(label);
+        progressContainer.appendChild(wrapper);
+
+        const xhr = new XMLHttpRequest();
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder", folder);
+
+        xhr.upload.addEventListener("progress", function(e){
+            if(e.lengthComputable){
+                const percent = (e.loaded / e.total) * 100;
+                bar.style.width = percent+"%";
+            }
+        });
+
+        xhr.onreadystatechange = function(){
+            if(xhr.readyState == 4 && xhr.status == 200){
+                bar.style.width = "100%";
+                bar.style.background = "linear-gradient(90deg, #28a745, #34ce57)";
+            }
+        }
+
+        xhr.open("POST","/upload");
+        xhr.send(formData);
+    }
+
+});
+</script>
+
+</body>
+</html>
