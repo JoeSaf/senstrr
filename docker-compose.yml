@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  senstr:
+    build: .
+    container_name: senstr
+    ports:
+      - "5000:5000"
+    volumes:
+      - ~/movies:/root/movies
+      - ./progress.json:/app/progress.json  
+    restart: unless-stopped
