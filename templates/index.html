@@ -29,22 +29,13 @@
 
 {% for f in files %}
 
-<div class="card">
-
-{% if f.is_dir %}
-
-<a href="/browse/{{ current_path }}/{{ f.name }}">
-📁 {{ f.name }}
-</a>
-
-{% else %}
-
-<a href="/watch/{{ current_path }}/{{ f.name }}">
-🎬 {{ f.name }}
-</a>
-
-{% endif %}
-
+<div class="card {% if f.is_dir %}folder{% endif %}">
+  <div class="card-media"></div>
+  <div class="card-content">
+    <a href="{% if f.is_dir %}/browse/{{ current_path }}/{{ f.name }}{% else %}/watch/{{ current_path }}/{{ f.name }}{% endif %}">
+      <span class="card-title">{{ f.name }}</span>
+    </a>
+  </div>
 </div>
 
 {% endfor %}
