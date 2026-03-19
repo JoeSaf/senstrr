@@ -4,304 +4,130 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Senstr Player</title>
 
+<link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+<script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+
 <style>
-
-body{
-margin:0;
-background:black;
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-font-family:sans-serif;
-}
-
-.player{
-position:relative;
-width:100vw;
-height:100vh;
-background:black;
-}
-
-video{
-width:100%;
-height:100%;
-object-fit:contain;
-background:black;
-}
-
-/* Floating controls */
-
-.controls{
-position:absolute;
-bottom:40px;
-left:50%;
-transform:translateX(-50%);
-display:flex;
-align-items:center;
-gap:22px;
-
-background:rgba(30,30,30,0.8);
-backdrop-filter:blur(20px);
-
-padding:14px 30px;
-border-radius:40px;
-
-opacity:0;
-transition:opacity .3s;
-}
-
-.player:hover .controls{
-opacity:1;
-}
-
-/* Buttons */
-
-.controls button{
-background:none;
-border:none;
-color:white;
-font-size:22px;
-cursor:pointer;
-width:44px;
-height:44px;
-display:flex;
-align-items:center;
-justify-content:center;
-border-radius:50%;
-transition:.2s;
-}
-
-.controls button:hover{
-background:rgba(255,255,255,0.15);
-}
-
-/* play button bigger */
-
-.play{
-font-size:30px;
-}
-
-/* volume slider */
-
-.volume{
-display:flex;
-align-items:center;
-gap:10px;
-}
-
-.volume input{
-width:90px;
-}
-
-/* timeline */
-
-.timeline{
-position:absolute;
-bottom:110px;
-left:5%;
-width:90%;
-height:6px;
-background:rgba(255,255,255,0.25);
-border-radius:4px;
-overflow:hidden;
-cursor:pointer;
-}
-
-.progress{
-height:100%;
-width:0%;
-background:#0071e3;
-}
-
-/* title */
-
-.title{
-position:absolute;
-top:20px;
-left:20px;
-color:white;
-font-size:15px;
-background:rgba(0,0,0,0.6);
-padding:6px 14px;
-border-radius:20px;
-}
-
-.home-btn{
-position:absolute;
-top:20px;
-right:20px;
-
-background:rgba(0,0,0,0.6);
-color:white;
-
-width:36px;
-height:36px;
-
-display:flex;
-align-items:center;
-justify-content:center;
-
-border-radius:50%;
-text-decoration:none;
-font-size:18px;
-
-backdrop-filter:blur(10px);
-
-transition:.2s;
-}
-
-.home-btn:hover{
-background:#0071e3;
-transform:scale(1.1);
-}
-
+body{margin:0;background:black;height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;font-family:sans-serif;}
+.player-container{position:relative;width:100%;height:80%;display:flex;justify-content:center;align-items:center;}
+video{width:100%;height:100%;object-fit:contain;background:black;}
+.title{position:absolute;top:10px;left:20px;color:white;font-size:15px;background:rgba(0,0,0,0.6);padding:6px 14px;border-radius:20px;z-index:10;}
+.home-btn{position:absolute;top:10px;right:20px;background:rgba(0,0,0,0.6);color:white;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;text-decoration:none;font-size:18px;backdrop-filter:blur(10px);transition:.2s;z-index:10;}
+.home-btn:hover{background:#0071e3;transform:scale(1.1);}
+.controls-row{display:flex;align-items:center;gap:10px;margin-top:10px;width:90%;max-width:800px;}
+.sub-select{flex:1;padding:8px 12px;font-size:14px;border-radius:6px;border:none;background:#222;color:white;cursor:pointer;}
+.sub-select:hover{background:#333;}
+.sub-loading{color:#ffaa00;font-size:14px;display:none;}
 </style>
 </head>
-
 <body>
-
+    
 <div class="player" id="playerBox">
+    <div class="title">{{ video_path.split('/')[-1] }}</div>
+    <div class="player-container">
+        <video id="player" autoplay controls crossorigin>
+            <source src="/stream/{{ video_path }}" type="video/mp4">
+        </video>
+        <a href="/" class="home-btn">🏠</a>
+    </div>
 
-<div class="title">
-{{ video_path.split('/')[-1] }}
-</div>
-<a href="/" class="home-btn">🏠</a>
-
-<video id="player" autoplay>
-<source src="/stream/{{ video_path }}">
-</video>
-
-<div class="timeline" id="timeline">
-<div class="progress" id="progress"></div>
-</div>
-
-<div class="controls" id="controls">
-
-<button onclick="prevEpisode()">⏮</button>
-
-<button onclick="rewind()">⏪</button>
-
-<button onclick="togglePlay()" class="play">⏯</button>
-
-<button onclick="forward()">⏩</button>
-
-{% if next_ep %}
-<button onclick="nextEpisode()">⏭</button>
-{% endif %}
-
-<div class="volume">
-
-<button onclick="toggleMute()">🔊</button>
-
-<input type="range" min="0" max="1" step="0.05" value="1" id="volume">
-
-</div>
-
-</div>
-
+    <!-- Subtitle controls row -->
+    <div class="controls-row">
+        <select id="subtitleSelector" class="sub-select">
+            <option value="">No subtitles</option>
+            {% for sub in subtitles %}
+            <option value="{{ sub.src }}" data-ext="{{ sub.ext }}">{{ sub.label }}</option>
+            {% endfor %}
+        </select>
+        <span id="subLoading" class="sub-loading">⏳ Loading...</span>
+    </div>
 </div>
 
 <script>
+const player = new Plyr('#player', {
+    keyboard: { focused: true, global: true },
+});
 
-let player = document.getElementById("player")
-let progress = document.getElementById("progress")
-let timeline = document.getElementById("timeline")
-let volume = document.getElementById("volume")
-
+// Resume playback
 player.currentTime = {{ resume_time }}
 
-/* play pause */
-
-function togglePlay(){
-if(player.paused) player.play()
-else player.pause()
-}
-
-/* skip */
-
-function rewind(){
-player.currentTime -= 10
-}
-
-function forward(){
-player.currentTime += 10
-}
-
-/* volume */
-
-volume.oninput = function(){
-player.volume = this.value
-}
-
-function toggleMute(){
-player.muted = !player.muted
-}
-
-/* timeline */
-
-player.addEventListener("timeupdate",()=>{
-
-let percent = (player.currentTime / player.duration)*100
-progress.style.width = percent+"%"
-
-})
-
-timeline.onclick = function(e){
-
-let rect = this.getBoundingClientRect()
-let percent = (e.clientX-rect.left)/rect.width
-
-player.currentTime = percent*player.duration
-
-}
-
-/* keyboard */
-
-document.addEventListener("keydown",(e)=>{
-
-if(e.code=="Space"){
-e.preventDefault()
-togglePlay()
-}
-
-if(e.key=="ArrowRight") forward()
-if(e.key=="ArrowLeft") rewind()
-
-if(e.key=="f") player.requestFullscreen()
-
-})
-
-/* save progress */
-
+// Save progress every 5s
 setInterval(()=>{
-
-fetch("/save_progress",{
-
-method:"POST",
-headers:{"Content-Type":"application/json"},
-
-body:JSON.stringify({
-video:"{{ video_path }}",
-time:player.currentTime
-})
-
-})
-
+    fetch("/save_progress",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({video:"{{ video_path }}", time:player.currentTime})
+    })
 },5000)
 
-/* next episode */
-
+// Next episode functionality
 {% if next_ep %}
-function nextEpisode(){
-window.location="/watch/{{ next_ep }}"
-}
-
-player.onended=function(){
-nextEpisode()
-}
+player.on('ended', () => {
+    window.location = "/watch/{{ next_ep }}";
+});
 {% endif %}
 
+// Manual subtitle loading
+const subSelector = document.getElementById('subtitleSelector');
+const subLoading = document.getElementById('subLoading');
+
+async function loadSubtitle(subPath, extension) {
+    subLoading.style.display = 'inline';
+
+    try {
+        let subtitleUrl;
+
+        if (extension === 'srt') {
+            subtitleUrl = `/subs/convert/${encodeURIComponent(subPath)}`;
+        } else {
+            subtitleUrl = `/subs/${encodeURIComponent(subPath)}`;
+        }
+
+        // Remove existing tracks
+        const tracks = player.media.querySelectorAll('track');
+        tracks.forEach(t => t.remove());
+
+        // Create new track
+        const track = document.createElement('track');
+        track.kind = 'subtitles';
+        track.label = subSelector.options[subSelector.selectedIndex].text;
+        track.srclang = 'en';
+        track.src = subtitleUrl;
+        track.default = true;
+
+        player.media.appendChild(track);
+
+        // 🔥 KEY FIX: force reload properly
+        player.media.load();
+
+    } catch (error) {
+        console.error('Error loading subtitle:', error);
+        alert('Failed to load subtitle');
+    } finally {
+        subLoading.style.display = 'none';
+    }
+}
+subSelector.addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const subPath = this.value;
+    
+    if (!subPath) {
+        // No subtitle selected - remove all tracks
+        const tracks = player.media.querySelectorAll('track');
+        tracks.forEach(t => t.remove());
+        player.captions.toggle(false);
+        return;
+    }
+    
+    const extension = selectedOption.dataset.ext;
+    loadSubtitle(subPath, extension);
+});
+
+// Optional: Pre-load the first subtitle if any exist and user wants it
+{% if subtitles %}
+// Uncomment the next line if you want to auto-load the first subtitle
+setTimeout(() => { subSelector.value = subSelector.options[1].value; subSelector.dispatchEvent(new Event('change')); }, 1000);
+{% endif %}
 </script>
 
 </body>

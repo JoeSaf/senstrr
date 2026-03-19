@@ -1,5 +1,33 @@
-# Created by venv; see https://docs.python.org/3/library/venv.html
-venv/
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+venv/
+.env/
+
+# Logs
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# App data
 progress.json
+
+# Media (VERY IMPORTANT for you)
+movies/
+uploads/
+*.mp4
+*.mkv
+*.avi
+
+# Flask stuff
+instance/
+*.sqlite3
+
+# Docker
+docker-data/
